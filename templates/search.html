@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- ... existing header content ... -->
+
+<div class="image-grid">
+    {% for image in images %}
+    <div class="image-item">
+        <a href="{{ url_for('image_detail', image_id=image.id) }}">
+            <div class="image-loading"></div>
+            <img src="{{ url_for('uploaded_file', filename=image.filename) }}" 
+                 alt="{{ image.filename }}" 
+                 loading="lazy"
+                 onload="this.style.opacity='1'; this.previousElementSibling.style.display='none';"
+                 style="opacity: 0; transition: opacity 0.3s ease;">
+            <div class="image-overlay">
+                <div class="image-title">{{ image.filename|truncate(20) }}</div>
+            </div>
+        </a>
+    </div>
+    {% else %}
+    <div class="no-results">
+        <p>No images found matching your search.</p>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- ... pagination and other content ... -->
+{% endblock %}

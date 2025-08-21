@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="{{ 'dark' if dark_mode else 'light' }}" data-dark-mode="{{ dark_mode }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Image Board{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<style>
+        /* Initial state for page transition */
+        body {
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        body.page-loaded {
+            opacity: 1;
+        }
+    </style>
+
+<body>
+    <div class="page-transition-overlay"></div>
+    <header>
+        <nav class="navbar">
+            <div class="nav-container">
+                <a href="{{ url_for('index') }}" class="nav-logo">
+                    <img src="{{ url_for('static', filename='images/logo.png') }}" 
+     alt="ImageBoard Logo" 
+     width="42" 
+     height="32"
+     style="vertical-align: middle; margin-right: 0px;">
+Eclipse
+                </a>
+                <div class="nav-search">
+                    <form action="{{ url_for('search') }}" method="get">
+                        <input type="text" name="q" placeholder="Search tags..." value="{{ request.args.get('q', '') }}">
+                    </form>
+                </div>
+                <div class="nav-menu">
+                    <a href="{{ url_for('index') }}">Home</a>
+                    <a href="{{ url_for('upload_file') }}">Upload</a>
+                    <a href="{{ url_for('reverse_search') }}">Reverse Search</a>
+                    
+                    {% if session.user_id %}
+                    <div class="user-menu">
+                        <a class="user-link">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                            {{ session.username }}
+                        </a>
+                        <div class="user-dropdown">
+                            <a href="{{ url_for('profile') }}">My Profile</a>
+                            <a href="{{ url_for('logout') }}">Logout</a>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="auth-links">
+                        <a href="{{ url_for('login') }}">Login</a>
+                        <a href="{{ url_for('signup') }}" class="btn-signup">Sign Up</a>
+                    </div>
+                    {% endif %}
+                    
+                    <button id="themeToggle" class="theme-toggle" aria-label="Toggle dark mode">
+                        <!-- Icon will be set by JavaScript -->
+                    </button>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flashes">
+                    {% for category, message in messages %}
+                        <div class="flash {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer>
+        <div class="footer-content">
+            <p>&copy; 2023 ImageBoard. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <script>
+        // Mark page as loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            document.body.classList.add('page-loaded');
+            
+            // Initialize user dropdown
+            const userLinks = document.querySelectorAll('.user-link');
+            userLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const dropdown = this.nextElementSibling;
+                    dropdown.classList.toggle('show');
+                });
+            });
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!e.target.matches('.user-link') && !e.target.closest('.user-link')) {
+                    const dropdowns = document.querySelectorAll('.user-dropdown');
+                    dropdowns.forEach(dropdown => {
+                        dropdown.classList.remove('show');
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

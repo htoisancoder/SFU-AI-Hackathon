@@ -1,0 +1,312 @@
+{% extends "base.html" %}
+
+{% block title %}My Profile - Image Board{% endblock %}
+
+{% block content %}
+<!-- Main Profile Card -->
+<div class="profile-container">
+    <div class="page-header">
+        <h1>My Profile</h1>
+    </div>
+
+    <a href="{{ url_for('upload_file') }}" class="upload-cta-box">
+    <div class="upload-cta-content">
+        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary); margin-bottom: 12px;">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="17 8 12 3 7 8"></polyline>
+            <line x1="12" y1="3" x2="12" y2="15"></line>
+        </svg>
+        <h3>Ready to Upload?</h3>
+        <p>Share your images with the community.</p>
+        <span class="btn-primary upload-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+            Upload New Image
+        </span>
+    </div>
+</a>
+
+    {% if images %}
+    <div class="page-header">
+        <h2>My Uploads</h2>
+    </div>
+
+    <div class="image-grid">
+        {% for image in images %}
+        <div class="image-item">
+            <a href="{{ url_for('image_detail', image_id=image.id) }}">
+                <div class="image-loading"></div>
+                <img src="{{ url_for('uploaded_file', filename=image.filename) }}" 
+                     alt="{{ image.filename }}" 
+                     loading="lazy"
+                     onload="this.style.opacity='1'; this.previousElementSibling.style.display='none';"
+                     style="opacity: 0; transition: opacity 0.3s ease;">
+                <div class="image-overlay">
+                    <div class="image-title">{{ image.filename|truncate(20) }}</div>
+                </div>
+            </a>
+            <div class="image-actions">
+                <form action="{{ url_for('delete_image', image_id=image.id) }}" method="post" 
+                      onsubmit="return confirm('Are you sure you want to delete this image?');">
+                    <button type="submit" class="delete-btn" title="Delete image">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="no-images">
+        <div class="no-images-content">
+            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                <polyline points="21 15 16 10 5 21"></polyline>
+            </svg>
+            <h3>No images yet</h3>
+            <p>You haven't uploaded any images yet.</p>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+/* ===== PROFILE CONTAINER (Main Box Around Content) ===== */
+
+.upload-cta-box {
+    display: block;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    text-align: center;
+    margin-bottom: 32px;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    text-decoration: none; /* Remove underline */
+    color: inherit; /* Use inherited text color */
+}
+
+.upload-cta-box:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    background: var(--card-bg); /* Slight hover highlight */
+}
+
+.upload-cta-content h3 {
+    margin: 0 0 8px 0;
+    font-size: 1.4rem;
+    color: var(--text-primary);
+}
+
+.upload-cta-content p {
+    margin: 0 0 16px 0;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+.upload-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    font-size: 1rem;
+    font-weight: 600;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: background 0.2s ease;
+    cursor: pointer;
+}
+
+.upload-btn:hover {
+    background: #6366f0;
+    text-decoration: none;
+}
+
+.btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    font-size: 1rem;
+    font-weight: 600;
+}
+.profile-container {
+    background: var(--card-bg);
+    border-radius: 16px;
+    padding: 32px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    border: 1px solid var(--border);
+    max-width: 1200px;
+    margin: 0 auto; /* Center the container */
+}
+
+.page-header {
+    margin-bottom: 24px;
+}
+
+.page-header h1,
+.page-header h2 {
+    margin: 0 0 8px 0;
+    color: var(--text-primary);
+    font-size: 1.8rem;
+}
+
+.page-header p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 1rem;
+}
+
+.profile-actions {
+    margin-bottom: 32px;
+    text-align: center;
+}
+
+/* ===== IMAGE GRID ===== */
+.image-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+    margin-top: 20px;
+}
+
+.image-item {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    aspect-ratio: 1 / 1;
+    background: var(--bg-secondary);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.image-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.image-item a {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.image-loading {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(45deg, var(--bg-secondary), var(--border));
+    z-index: 1;
+}
+
+.image-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+    color: white;
+    padding: 12px;
+    font-size: 0.9rem;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 2;
+}
+
+.image-item:hover .image-overlay {
+    opacity: 1;
+}
+
+/* ===== IMAGE ACTIONS (Delete Button) ===== */
+.image-actions {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 3;
+}
+
+.delete-btn {
+    background: rgba(239, 68, 68, 0.9);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.delete-btn:hover {
+    background: rgb(239, 68, 68);
+    transform: scale(1.1);
+}
+
+/* ===== NO IMAGES STATE ===== */
+.no-images {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-secondary);
+}
+
+.no-images-content svg {
+    margin-bottom: 16px;
+    color: var(--text-tertiary);
+}
+
+.no-images-content h3 {
+    margin-bottom: 8px;
+    color: var(--text-primary);
+}
+
+.no-images-content p {
+    margin-bottom: 24px;
+    font-size: 0.95rem;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+    .profile-container {
+        padding: 20px;
+        margin: 16px;
+    }
+
+    .page-header h1 {
+        font-size: 1.6rem;
+    }
+
+    .image-actions {
+        top: 8px;
+        right: 8px;
+    }
+
+    .delete-btn {
+        padding: 4px;
+    }
+
+    .image-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 12px;
+    }
+}
+</style>
+{% endblock %}

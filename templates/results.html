@@ -1,0 +1,327 @@
+{% extends "base.html" %}
+
+{% block title %}Search Results - Image Board{% endblock %}
+
+{% block content %}
+<div class="results-header">
+    <h1>Reverse Search Results</h1>
+    <p>Found {{ results|length }} similar images</p>
+    
+    {% if query_image_data %}
+    <div class="query-image">
+        <h3>Query Image:</h3>
+        <img src="{{ query_image_data }}" alt="Query image" class="query-img">
+        <div class="query-filename">{{ query_filename }}</div>
+    </div>
+    {% endif %}
+</div>
+
+{% if results %}
+<div class="results-grid">
+    {% for result in results %}
+    <div class="result-item">
+        {% if result.id > 0 %}
+        <a href="{{ url_for('image_detail', image_id=result.id) }}">
+            <img src="{{ url_for('uploaded_file', filename=result.filename) }}" 
+                 alt="{{ result.filename }}" 
+                 loading="lazy">
+            <div class="result-overlay">
+                <div class="similarity-score">{{ (result.similarity * 100)|round(1) }}% match</div>
+            </div>
+        </a>
+        {% else %}
+        <div class="image-container">
+            <img src="{{ url_for('uploaded_file', filename=result.filename) }}" 
+                 alt="{{ result.filename }}" 
+                 loading="lazy">
+            <div class="result-overlay">
+                <div class="similarity-score">{{ (result.similarity * 100)|round(1) }}% match</div>
+            </div>
+        </div>
+        {% endif %}
+        <div class="result-info">
+            <div class="result-meta">
+                {% if result.id > 0 %}
+                <span class="image-id">#{{ result.id }}</span>
+                {% else %}
+                <span class="image-id">#Processing</span>
+                {% endif %}
+                <span class="similarity">{{ (result.similarity * 100)|round(1) }}%</span>
+            </div>
+            <div class="result-tags">
+                {% if result.tags and result.tags != 'No tags yet' and result.tags != 'Processing...' %}
+                    {{ result.tags|truncate(80) }}
+                {% else %}
+                    <em>{{ result.tags }}</em>
+                {% endif %}
+            </div>
+            <div class="result-actions">
+                {% if result.id > 0 %}
+                <a href="{{ url_for('image_detail', image_id=result.id) }}" class="view-btn">View Details</a>
+                <button onclick="findSimilar({{ result.id }})" class="similar-btn">Find Similar</button>
+                {% else %}
+                <span class="view-btn disabled">Processing...</span>
+                <button class="similar-btn disabled" disabled>Find Similar</button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="no-results">
+    <div class="no-results-content">
+        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+        <h3>No similar images found</h3>
+        <p>Try using a different image or adjust your search criteria</p>
+        <a href="{{ url_for('reverse_search') }}" class="btn-primary">Try Again</a>
+    </div>
+</div>
+{% endif %}
+
+<script>
+function findSimilar(imageId) {
+    window.location.href = '{{ url_for("reverse_search") }}?image_id=' + imageId;
+}
+
+// Clean up temporary files after the page loads
+window.addEventListener('load', function() {
+    // Check if this is a results page with a temp file query
+    const queryFilename = "{{ query_filename }}";
+    
+    // If the query was from a file upload (not from existing image), offer to save it
+    if (queryFilename && !queryFilename.startsWith('temp_')) {
+        // Check if this file is already in the database
+        fetch('/check_image?filename=' + encodeURIComponent(queryFilename))
+            .then(response => response.json())
+            .then(data => {
+                if (!data.exists) {
+                    // Offer to add to database permanently
+                    if (confirm('Would you like to add this image to your collection?')) {
+                        fetch('/save_uploaded_image', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ filename: queryFilename })
+                        }).then(response => {
+                            if (response.ok) {
+                                alert('Image added to your collection!');
+                            }
+                        }).catch(error => console.error('Error:', error));
+                    }
+                }
+            })
+            .catch(error => console.error('Error checking image:', error));
+    }
+});
+</script>
+
+<style>
+.results-header {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.results-header h1 {
+    margin-bottom: 8px;
+}
+
+.query-image {
+    margin-top: 24px;
+    padding: 16px;
+    background: var(--card-bg);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    display: inline-block;
+}
+
+.query-image h3 {
+    margin-bottom: 12px;
+    font-size: 1.1rem;
+}
+
+.query-img {
+    max-width: 200px;
+    max-height: 200px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+}
+
+.query-filename {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 24px;
+}
+
+.result-item {
+    background: var(--card-bg);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px var(--shadow);
+    border: 1px solid var(--border);
+    transition: all 0.3s ease;
+}
+
+.result-item:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 32px var(--shadow);
+}
+
+.result-item a, .result-item .image-container {
+    display: block;
+    position: relative;
+    overflow: hidden;
+}
+
+.result-item img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.result-item:hover img {
+    transform: scale(1.05);
+}
+
+.result-overlay {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.result-info {
+    padding: 16px;
+}
+
+.result-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.image-id {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.similarity {
+    font-weight: 700;
+    color: var(--success);
+    font-size: 1.1rem;
+}
+
+.result-tags {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.4;
+    margin-bottom: 16px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.result-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.view-btn, .similar-btn {
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    border: none;
+    cursor: pointer;
+}
+
+.view-btn {
+    background: var(--primary);
+    color: white;
+    flex: 2;
+}
+
+.view-btn:hover {
+    background: var(--primary-hover);
+    transform: translateY(-2px);
+}
+
+.view-btn.disabled {
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    cursor: not-allowed;
+}
+
+.similar-btn {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    flex: 1;
+}
+
+.similar-btn:hover {
+    background: var(--bg-tertiary);
+    transform: translateY(-2px);
+}
+
+.similar-btn.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.no-results {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.no-results-content svg {
+    margin-bottom: 16px;
+    color: var(--text-tertiary);
+}
+
+.no-results-content h3 {
+    margin-bottom: 8px;
+    color: var(--text-primary);
+}
+
+.no-results-content p {
+    margin-bottom: 24px;
+    color: var(--text-secondary);
+}
+
+@media (max-width: 768px) {
+    .results-grid {
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 16px;
+    }
+    
+    .result-actions {
+        flex-direction: column;
+    }
+    
+    .query-img {
+        max-width: 150px;
+        max-height: 150px;
+    }
+}
+</style>
+{% endblock %}

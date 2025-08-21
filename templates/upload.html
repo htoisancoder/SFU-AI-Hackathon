@@ -1,0 +1,400 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Image - Image Board{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Upload Image</h1>
+    <p>Share your images with the community</p>
+</div>
+
+<!-- Upload Section -->
+<div class="upload-section">
+    <div class="upload-card">
+        <div class="upload-preview" id="uploadPreview">
+            <div class="preview-placeholder">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                    <polyline points="21 15 16 10 5 21"></polyline>
+                </svg>
+                <p>Image preview will appear here</p>
+            </div>
+            <img id="previewImage" style="display: none;" alt="Preview">
+        </div>
+
+        <form action="{{ url_for('upload_file') }}" method="post" enctype="multipart/form-data" class="upload-form">
+            <div class="form-group">
+                <label for="fileInput" class="file-input-label">
+                    <span class="file-input-button">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        Select Image
+                    </span>
+                    <span id="fileName" class="file-name">No file selected</span>
+                    <input type="file" id="fileInput" name="file" accept="image/*" required style="display: none;">
+                </label>
+            </div>
+
+            <div class="form-group">
+                <label for="tagsInput">Tags (auto-generated after upload)</label>
+                <textarea id="tagsInput" name="tags" placeholder="Tags will be automatically generated after upload" rows="3" disabled></textarea>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn-primary" id="uploadButton" disabled>
+                    <span class="btn-loading" id="btnLoading" style="display: none;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
+                        </svg>
+                    </span>
+                    <span id="btnText">Upload Image</span>
+                </button>
+                <a href="{{ url_for('index') }}" class="btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Upload Guidelines (now below) -->
+    <div class="upload-guidelines">
+        <h3>Upload Guidelines</h3>
+        <ul>
+            <li>Maximum file size: 16MB</li>
+            <li>Allowed formats: JPG, PNG, GIF, WEBP, BMP</li>
+            <li>Images must comply with our content policy</li>
+            <li>Tags are automatically generated using AI</li>
+            <li>You can edit tags after upload if needed</li>
+        </ul>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.getElementById('fileInput');
+    const fileName = document.getElementById('fileName');
+    const previewImage = document.getElementById('previewImage');
+    const previewPlaceholder = document.querySelector('.preview-placeholder');
+    const uploadButton = document.getElementById('uploadButton');
+    const btnLoading = document.getElementById('btnLoading');
+    const btnText = document.getElementById('btnText');
+    const form = document.querySelector('.upload-form');
+
+    // File input change handler
+    fileInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            fileName.textContent = file.name;
+            
+            // Show preview
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImage.src = e.target.result;
+                previewImage.style.display = 'block';
+                previewPlaceholder.style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+            
+            // Enable upload button
+            uploadButton.disabled = false;
+        } else {
+            fileName.textContent = 'No file selected';
+            previewImage.style.display = 'none';
+            previewPlaceholder.style.display = 'block';
+            uploadButton.disabled = true;
+        }
+    });
+
+    // Form submission handler
+    form.addEventListener('submit', function(e) {
+        btnLoading.style.display = 'inline-block';
+        btnText.textContent = 'Uploading...';
+        uploadButton.disabled = true;
+    });
+
+    // Drag and drop functionality
+    const uploadPreview = document.getElementById('uploadPreview');
+    
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        uploadPreview.addEventListener(eventName, preventDefaults, false);
+    });
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        uploadPreview.addEventListener(eventName, highlight, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        uploadPreview.addEventListener(eventName, unhighlight, false);
+    });
+
+    uploadPreview.addEventListener('drop', handleDrop, false);
+
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    function highlight() {
+        uploadPreview.classList.add('highlight');
+    }
+
+    function unhighlight() {
+        uploadPreview.classList.remove('highlight');
+    }
+
+    function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        
+        if (files.length > 0) {
+            const file = files[0];
+            if (file.type.match('image.*')) {
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+                fileInput.files = dataTransfer.files;
+                
+                // Trigger change
+                fileInput.dispatchEvent(new Event('change'));
+            }
+        }
+    }
+});
+</script>
+
+<style>
+/* Upload Section - Stacked layout */
+.upload-section {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Upload Card */
+.upload-card {
+    background: var(--card-bg);
+    border-radius: 20px;
+    padding: 32px;
+    box-shadow: 0 8px 32px var(--shadow);
+    border: 1px solid var(--border);
+    margin-bottom: 24px;
+}
+
+.upload-preview {
+    height: 300px;
+    border: 2px dashed var(--border);
+    border-radius: 16px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background: var(--bg-secondary);
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.upload-preview.highlight {
+    border-color: var(--primary);
+    background: rgba(99, 102, 241, 0.05);
+}
+
+.preview-placeholder {
+    text-align: center;
+    color: var(--text-tertiary);
+}
+
+.preview-placeholder svg {
+    margin-bottom: 12px;
+}
+
+#previewImage {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+/* Form Styles */
+.form-group {
+    margin-bottom: 24px;
+}
+
+.file-input-label {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.file-input-button {
+    padding: 16px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+    color: white;
+    border-radius: 12px;
+    text-align: center;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.file-input-button:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(99, 102, 241, 0.3);
+}
+
+.file-name {
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.form-group textarea {
+    width: 100%;
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-family: inherit;
+    resize: vertical;
+    min-height: 100px;
+}
+
+.form-group textarea:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.form-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+/* Buttons */
+.btn-primary {
+    padding: 12px 24px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-primary:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+.btn-primary:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(99, 102, 241, 0.3);
+}
+
+.btn-secondary {
+    padding: 12px 24px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+    background: var(--bg-tertiary);
+    transform: translateY(-2px);
+}
+
+/* Loading Spinner */
+.btn-loading {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Upload Guidelines - Now below upload card */
+.upload-guidelines {
+    background: var(--card-bg);
+    border-radius: 16px;
+    padding: 24px;
+    border: 1px solid var(--border);
+}
+
+.upload-guidelines h3 {
+    margin-bottom: 16px;
+    color: var(--text-primary);
+    font-size: 1.2rem;
+}
+
+.upload-guidelines ul {
+    list-style: none;
+    padding: 0;
+}
+
+.upload-guidelines li {
+    padding: 8px 0;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border);
+}
+
+.upload-guidelines li:last-child {
+    border-bottom: none;
+}
+
+.upload-guidelines li::before {
+    content: "•";
+    color: var(--primary);
+    font-weight: bold;
+    display: inline-block;
+    width: 1em;
+    margin-left: -1em;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .upload-section {
+        padding: 15px;
+    }
+
+    .upload-card {
+        padding: 24px;
+    }
+
+    .upload-preview {
+        height: 250px;
+    }
+
+    .form-actions {
+        flex-direction: column;
+    }
+
+    .btn-primary,
+    .btn-secondary {
+        width: 100%;
+        justify-content: center;
+    }
+}
+</style>
+{% endblock %}
