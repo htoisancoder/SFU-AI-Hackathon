@@ -1,0 +1,10 @@
+Flask==2.3.3
+Werkzeug==2.3.7
+Pillow==10.0.1
+opencv-python==4.8.1.78
+numpy==1.24.4
+requests==2.31.0
+huggingface-hub==0.17.3
+onnxruntime==1.15.1
+pandas==2.0.3
+flask-cors==4.0.0
